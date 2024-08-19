@@ -61,6 +61,43 @@ def sign_excel(excel_file_path: str):
 
     return True
 
+def screenshot_excel_signature(excel_file_path: str, region=None, output_folder=None):
+    """
+    # 機能: Exccelファイルに署名して、保存する.
+    # 引数: excel_file_path: 署名して保存したいExcelファイルのパス文字列.
+    # 引数: region: スクリーンショットする座標･サイズ. (left, top, width, height)で表現する. Noneなら全画面.
+    # 引数: output_folder: スクリーンショットを保存するフォルダ.
+    """
+
+    # 引数output_folderに指定がなければ、スクリーンショットの保存先を対象ファイルと同じフォルダにする.
+    if output_folder is None:
+        output_folder = os.path.split(excel_file_path)[0]
+
+    # Excelファイルを立ち上げ、｢デジタル署名｣ダイアログを開く.
+    excel_app = open_excel_and_open_signature_dialog(excel_file_path)
+    if excel_app is None:
+        return
+
+    # [詳細]から、｢証明書｣画面を開く.
+    send_keys('D')  # [詳細(D)]
+    sleep(0.50)
+
+    excel_filename = os.path.basename(excel_file_path)  # 拡張子あり
+    # excel_filename = os.path.splitext(os.path.basename(excel_file_path))[0]  # 拡張子なし
+
+    send_keys('{TAB}')  # [全般]タブ
+    screenshot(f"{output_folder}\\{excel_filename}_1_全般.png", region=region)
+    sleep(0.25)
+
+    send_keys('{RIGHT}')  # [全般]タブ -> [詳細]タブ
+    screenshot(f"{output_folder}\\{excel_filename}_2_詳細.png", region=region)
+    sleep(0.25)
+
+    send_keys('{RIGHT}')  # [詳細]タブ -> [証明書のパス]タブ
+    screenshot(f"{output_folder}\\{excel_filename}_3_パス.png", region=region)
+    sleep(0.25)
+
+    excel_app.kill()
 
 def open_excel_and_open_signature_dialog(excel_file_path: str):
     """
@@ -99,51 +136,10 @@ def open_excel_and_open_signature_dialog(excel_file_path: str):
     sleep(0.75)
 
     # ｢デジタル署名｣を開く.
-    # Altを押したまま、T -> D. Excel16以降は、Altを1度離した(Alt + T) -> (Alt + D) も可.
-    send_keys('%TD') # Alt -> T -> D
+    send_keys('% T D') # Alt -> T -> D
     sleep(0.75)
 
     return excel_app
-
-
-def screenshot_excel_signature(excel_file_path: str, region=None, output_folder=None):
-    """
-    # 機能: Exccelファイルに署名して、保存する.
-    # 引数: excel_file_path: 署名して保存したいExcelファイルのパス文字列.
-    # 引数: region: スクリーンショットする座標･サイズ. (left, top, width, height)で表現する. Noneなら全画面.
-    # 引数: output_folder: スクリーンショットを保存するフォルダ.
-    """
-
-    # 引数output_folderに指定がなければ、スクリーンショットの保存先を対象ファイルと同じフォルダにする.
-    if output_folder is None:
-        output_folder = os.path.split(excel_file_path)[0]
-
-    # Excelファイルを立ち上げ、｢デジタル署名｣ダイアログを開く.
-    excel_app = open_excel_and_open_signature_dialog(excel_file_path)
-    if excel_app is None:
-        return
-
-    # [詳細]から、｢証明書｣画面を開く.
-    send_keys('D')  # [詳細(D)]
-    sleep(0.50)
-
-    excel_filename = os.path.basename(excel_file_path)  # 拡張子あり
-    # excel_filename = os.path.splitext(os.path.basename(excel_file_path))[0]  # 拡張子なし
-
-    send_keys('{TAB}')  # [全般タブ]
-    screenshot(f"{output_folder}\\{excel_filename}_1_全般.png", region=region)
-    sleep(0.25)
-
-    send_keys('{RIGHT}')  # [全般]タブ -> [詳細]タブ
-    screenshot(f"{output_folder}\\{excel_filename}_2_詳細.png", region=region)
-    sleep(0.25)
-
-    send_keys('{RIGHT}')  # [詳細]タブ -> [証明書のパス]タブ
-    screenshot(f"{output_folder}\\{excel_filename}_3_パス.png", region=region)
-    sleep(0.25)
-
-    excel_app.kill()
-
 
 def is_excel_running() -> bool:
     """
@@ -223,6 +219,12 @@ def find_excel_exe() -> None:
         sys.exit(1)
 
 def screenshot(output_file_path, region=None):
+    """
+    機能: pyguiauot.screenshot風のスクリーンショットを撮る関数.
+    引数: output_file_path: 出力するファイル名.
+    引数: region: (left, top, width, height)の形で、座標とサイズを指定する。指定がなくNoneなら全画面.
+    依存ライブラリ: from PIL import ImageGrab
+    """
     bbox = None
     if region:
         left,top,width,height = region
